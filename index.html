@@ -1,0 +1,237 @@
+<!DOCTYPE html>
+<html lang="zh-TW">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+    <title>極致立體空靈鼓</title>
+    <style>
+        :root {
+            --drum-size: 88vmin;
+            /* 暗土黃色系配色 */
+            --bg-color: #1a1612;
+            --drum-base: #7d623b; /* 暗土黃色 */
+            --drum-highlight: #6e5a3c;
+            --tongue-color: #3d3222;
+            --accent: #ffcc66; /* 溫暖的引導光 */
+        }
+
+        body {
+            margin: 0;
+            background: var(--bg-color);
+            color: #d2b48c;
+            font-family: "Microsoft JhengHei", sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: space-between;
+            height: 100vh;
+            padding: 2vh 0;
+            overflow: hidden;
+            touch-action: none;
+        }
+
+        .header { text-align: center; }
+        
+        select {
+            padding: 10px 20px;
+            border-radius: 8px;
+            background: #2a241c;
+            color: #d2b48c;
+            border: 1px solid #5d4d37;
+            font-size: 16px;
+            margin-bottom: 10px;
+        }
+
+        /* 鼓面主體：多層陰影創造立體感 */
+        .drum-body {
+            position: relative;
+            width: var(--drum-size);
+            height: var(--drum-size);
+            background: radial-gradient(circle at 35% 35%, var(--drum-highlight), var(--drum-base) 60%, #1a1208);
+            border-radius: 50%;
+            /* 外陰影營造懸浮與環境光，內陰影營造金屬邊緣 */
+            box-shadow: 
+                0 20px 60px rgba(0,0,0,0.8),
+                inset -5px -5px 15px rgba(0,0,0,0.5),
+                inset 5px 5px 15px rgba(255,255,255,0.1);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            border: 4px solid #2a2115;
+        }
+
+        /* 鼓舌設計：模擬切割凹陷與浮雕感 */
+        .tongue {
+            position: absolute;
+            background: var(--tongue-color);
+            border: 1px solid rgba(0,0,0,0.4);
+            border-radius: 45%;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            transition: all 0.15s ease;
+            user-select: none;
+            /* 內陰影創造「鋼片切縫」的感覺 */
+            box-shadow: 
+                inset 2px 2px 5px rgba(0,0,0,0.6),
+                inset -1px -1px 2px rgba(255,255,255,0.05),
+                2px 4px 8px rgba(0,0,0,0.3);
+        }
+
+        .tongue span {
+            font-size: 2rem;
+            color: rgba(210, 180, 140, 0.6);
+            text-shadow: 1px 1px 2px rgba(0,0,0,0.8);
+            pointer-events: none;
+        }
+
+        /* 擊打效果 */
+        .tongue:active {
+            transform: scale(0.94) translateY(2px);
+            background: #5d4d37;
+            box-shadow: inset 4px 4px 10px rgba(0,0,0,0.8);
+        }
+
+        /* 引導模式：溫暖的呼吸光 */
+        .guide-active {
+            border-color: var(--accent);
+            box-shadow: 
+                0 0 15px var(--accent),
+                inset 0 0 10px var(--accent);
+            animation: pulse 1.2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; filter: brightness(1); }
+            50% { opacity: 0.7; filter: brightness(1.3); }
+        }
+
+        #status { font-weight: 300; letter-spacing: 1px; color: #8e7352; }
+    </style>
+</head>
+<body>
+
+    <div class="header">
+        <select id="songSelect">
+            <option value="">選擇曲目</option>
+            <option value="twinkle">小星星</option>
+            <option value="jasmine">茉莉花</option>
+            <option value="birthday">生日快樂</option>
+            <option value="bee">小蜜蜂</option>
+            <option value="longago">往事難忘</option>
+            <option value="wangchunfeng">望春風</option>
+
+        </select>
+        <p id="status">靜心感受 ‧ 靈動之聲</p>
+    </div>
+
+    <div class="drum-body" id="drum">
+        </div>
+
+    <div style="margin-bottom: 20px;"></div>
+
+<script>
+    const audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+    const drum = document.getElementById('drum');
+    
+    // 配置：增加了 4 和 7 使曲目更豐富
+    const notes = [
+        { id: '1', f: 261.6, r: 28, angle: 90, size: 18 },
+        { id: '2', f: 293.6, r: 28, angle: 155, size: 17 }, 
+        { id: '3', f: 329.6, r: 28, angle: 25, size: 17 },
+        { id: '4', f: 349.2, r: 36, angle: 205, size: 16 },
+        { id: '5', f: 392.0, r: 36, angle: 335, size: 16 },
+        { id: '6', f: 440.0, r: 40, angle: 250, size: 15 },
+        { id: '7', f: 493.8, r: 40, angle: 290, size: 15 },
+        { id: '1.', f: 523.2, r: 0, angle: 0, size: 22 }
+    ];
+
+    const songs = {
+        twinkle: ["1", "1", "5", "5", "6", "6", "5", "4", "4", "3", "3", "2", "2", "1"],
+        jasmine: ["3", "3", "5", "6", "1.", "1.", "6", "5", "5", "6", "5"],
+        birthday: ["5", "5", "6", "5", "1.", "7"],
+        bee: ["5", "3", "3", "4", "2", "2", "1", "2", "3", "4", "5", "5", "5"],
+        longago: ["1", "1", "2", "3", "3", "4", "5", "3", "2", "5", "4", "2", "1"],
+// 望春風：最經典的台灣旋律
+    wangchunfeng: ["1", "1", "2", "4", "5", "4", "5", "6", "1.", "6", "6", "5", "4", "5", "6", "1.", "1.", "6", "1.", "4", "5", "5", "1", "6", "6", "5", "4", "4"]
+
+    };
+
+    let currentSong = [];
+    let step = 0;
+    const tongueMap = {};
+
+    function playTone(freq) {
+        if (audioCtx.state === 'suspended') audioCtx.resume();
+        const osc = audioCtx.createOscillator();
+        const gain = audioCtx.createGain();
+        const filter = audioCtx.createBiquadFilter();
+
+        osc.type = 'sine';
+        osc.frequency.setValueAtTime(freq, audioCtx.currentTime);
+        
+        filter.type = 'lowpass';
+        filter.frequency.value = 1000; // 降低頻率讓音色更溫潤、有土黃色的厚重感
+
+        gain.gain.setValueAtTime(0, audioCtx.currentTime);
+        gain.gain.linearRampToValueAtTime(0.4, audioCtx.currentTime + 0.02);
+        gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 3);
+
+        osc.connect(filter);
+        filter.connect(gain);
+        gain.connect(audioCtx.destination);
+
+        osc.start();
+        osc.stop(audioCtx.currentTime + 3);
+    }
+
+    function init() {
+        notes.forEach(note => {
+            const btn = document.createElement('div');
+            btn.className = 'tongue';
+            btn.innerHTML = `<span>${note.id}</span>`;
+            
+            const x = 50 + note.r * Math.cos(note.angle * Math.PI / 180);
+            const y = 50 + note.r * Math.sin(note.angle * Math.PI / 180);
+            
+            btn.style.width = note.size + '%';
+            btn.style.height = (note.size * 1.3) + '%';
+            btn.style.left = `${x - note.size/2}%`;
+            btn.style.top = `${y - (note.size*1.3)/2}%`;
+
+            const trigger = (e) => {
+                e.preventDefault();
+                playTone(note.f);
+                if (currentSong.length > 0 && note.id === currentSong[step]) {
+                    btn.classList.remove('guide-active');
+                    step++;
+                    if (step < currentSong.length) {
+                        tongueMap[currentSong[step]].classList.add('guide-active');
+                    } else {
+                        document.getElementById('status').innerText = "演奏完成，餘音繚繞...";
+                        currentSong = [];
+                    }
+                }
+            };
+
+            btn.addEventListener('pointerdown', trigger);
+            drum.appendChild(btn);
+            tongueMap[note.id] = btn;
+        });
+    }
+
+    document.getElementById('songSelect').onchange = (e) => {
+        const val = e.target.value;
+        if (!val) return;
+        Object.values(tongueMap).forEach(t => t.classList.remove('guide-active'));
+        currentSong = songs[val];
+        step = 0;
+        tongueMap[currentSong[0]].classList.add('guide-active');
+        document.getElementById('status').innerText = "引導中，請擊打發光位置";
+    };
+
+    init();
+</script>
+</body>
+</html>
