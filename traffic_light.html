@@ -2,26 +2,31 @@
 <html lang="zh-Hant">
 <head>
 <meta charset="UTF-8">
-<meta name="viewport" content="width=device-width, initial-scale=1.0, minimum-scale=0.5, maximum-scale=5.0, user-scalable=yes">
-<meta name="apple-mobile-web-app-capable" content="yes">
-<meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>紅綠燈</title>
+<meta name="viewport" content="width=device-width, initial-scale=1.0, user-scalable=no">
+<title>教育用紅綠燈系統</title>
 
 <style>
+:root {
+    --scale: 1; /* 控制縮放的變數 */
+}
+
 body {
     margin: 0;
     background: #2c3e50;
-
     display: flex;
     justify-content: center;
     align-items: center;
-
-    height: 100dvh; /* 🔥 重點：手機滿版 */
+    height: 100vh;
+    overflow: hidden; /* 防止全螢幕時出現捲軸 */
+    touch-action: none; /* 禁用瀏覽器預設的手勢，改由 JS 控制 */
 }
 
-/* 外框 */
+/* 佈局容器 */
 .container {
     display: flex;
+    transition: transform 0.1s ease-out;
+    transform: scale(var(--scale));
+    will-change: transform;
 }
 
 /* 預設直式 */
@@ -34,38 +39,55 @@ body {
     flex-direction: row;
 }
 
-/* 紅綠燈 */
+/* 紅綠燈主體 */
 .traffic-light {
     background: #222;
     padding: 20px;
-    border-radius: 20px;
+    border-radius: 25px;
     display: flex;
     gap: 20px;
-    cursor: pointer; /* 👉 提示可點擊 */
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
+    cursor: pointer;
+    box-shadow: 0 0 30px rgba(0,0,0,0.7);
 }
 
-/* 燈 */
+/* 燈泡樣式 */
 .light {
     width: 80px;
     height: 80px;
     border-radius: 50%;
     background: #444;
     transition: 0.3s;
+    position: relative;
 }
 
-/* 亮燈 */
-.active.red { background: red; box-shadow: 0 0 20px red; }
-.active.yellow { background: gold; box-shadow: 0 0 20px gold; }
-.active.green { background: limegreen; box-shadow: 0 0 20px limegreen; }
+/* 亮燈效果 */
+.active.red { background: #ff0000; box-shadow: 0 0 30px #ff0000, inset 0 0 10px rgba(255,255,255,0.5); }
+.active.yellow { background: #ffcc00; box-shadow: 0 0 30px #ffcc00, inset 0 0 10px rgba(255,255,255,0.5); }
+.active.green { background: #00ff00; box-shadow: 0 0 30px #00ff00, inset 0 0 10px rgba(255,255,255,0.5); }
 
+/* 全螢幕按鈕 (浮動) */
+#fullscreen-btn {
+    position: fixed;
+    top: 20px;
+    right: 20px;
+    background: rgba(255,255,255,0.2);
+    color: white;
+    border: none;
+    padding: 10px 15px;
+    border-radius: 10px;
+    font-size: 14px;
+    cursor: pointer;
+    z-index: 100;
+}
 </style>
 </head>
 
 <body>
 
+<button id="fullscreen-btn" onclick="toggleFullscreen()">進入全螢幕</button>
+
 <div class="container vertical" id="container">
-    <div class="traffic-light" onclick="toggleLayout()">
+    <div class="traffic-light" id="trafficLight">
         <div class="light red"></div>
         <div class="light yellow"></div>
         <div class="light green"></div>
@@ -80,59 +102,92 @@ let lights = {
 };
 
 let container = document.getElementById('container');
+let trafficLight = document.getElementById('trafficLight');
 
-/* 點擊切換方向 */
-function enterFullscreen() {
-    let elem = document.documentElement;
+// --- 1. 方向切換 ---
+trafficLight.addEventListener('click', (e) => {
+    // 只有在單指點擊（非縮放手勢）時才切換
+    if (e.detail === 1) { 
+        container.classList.toggle('vertical');
+        container.classList.toggle('horizontal');
+    }
+});
 
-    if (elem.requestFullscreen) {
-        elem.requestFullscreen();
+// --- 2. 全螢幕功能 ---
+function toggleFullscreen() {
+    if (!document.fullscreenElement) {
+        document.documentElement.requestFullscreen().catch(err => {
+            alert(`無法切換全螢幕: ${err.message}`);
+        });
+        document.getElementById('fullscreen-btn').innerText = "退出全螢幕";
+    } else {
+        document.exitFullscreen();
+        document.getElementById('fullscreen-btn').innerText = "進入全螢幕";
     }
 }
 
-/* 點擊同時切換 + 全螢幕 */
-function toggleLayout() {
-    container.classList.toggle('vertical');
-    container.classList.toggle('horizontal');
+// --- 3. 雙指縮放功能 ---
+let initialDist = 0;
+let currentScale = 1;
 
-    enterFullscreen(); // 🔥 加這行
-}
+container.addEventListener('touchstart', (e) => {
+    if (e.touches.length === 2) {
+        initialDist = Math.hypot(
+            e.touches[0].pageX - e.touches[1].pageX,
+            e.touches[0].pageY - e.touches[1].pageY
+        );
+    }
+}, { passive: false });
 
-/* 關燈 */
+container.addEventListener('touchmove', (e) => {
+    if (e.touches.length === 2) {
+        e.preventDefault();
+        let dist = Math.hypot(
+            e.touches[0].pageX - e.touches[1].pageX,
+            e.touches[0].pageY - e.touches[1].pageY
+        );
+        
+        let delta = dist / initialDist;
+        let newScale = currentScale * delta;
+        
+        // 限制縮放範圍在 0.5 倍到 4 倍之間
+        if (newScale > 0.5 && newScale < 4) {
+            document.documentElement.style.setProperty('--scale', newScale);
+        }
+    }
+}, { passive: false });
+
+container.addEventListener('touchend', (e) => {
+    if (e.touches.length < 2) {
+        // 更新當前比例，方便下次縮放
+        currentScale = parseFloat(getComputedStyle(document.documentElement).getPropertyValue('--scale'));
+    }
+});
+
+// --- 4. 紅綠燈邏輯 ---
 function turnOffAll() {
     for (let key in lights) {
         lights[key].classList.remove('active');
     }
 }
 
-/* 主流程 */
 function startTrafficLight() {
-
     function cycle() {
-
-        // 綠燈
         turnOffAll();
-        lights.green.classList.add('active');
+        lights.green.classList.add('active'); // 綠燈 4秒
 
         setTimeout(() => {
-
-            // 黃燈
             turnOffAll();
-            lights.yellow.classList.add('active');
+            lights.yellow.classList.add('active'); // 黃燈 1.5秒
 
             setTimeout(() => {
-
-                // 紅燈
                 turnOffAll();
-                lights.red.classList.add('active');
+                lights.red.classList.add('active'); // 紅燈 3秒
 
                 setTimeout(cycle, 3000);
-
             }, 1500);
-
         }, 4000);
     }
-
     cycle();
 }
 
