@@ -79,9 +79,20 @@ let lights = {
 let container = document.getElementById('container');
 
 /* 點擊切換方向 */
+function enterFullscreen() {
+    let elem = document.documentElement;
+
+    if (elem.requestFullscreen) {
+        elem.requestFullscreen();
+    }
+}
+
+/* 點擊同時切換 + 全螢幕 */
 function toggleLayout() {
     container.classList.toggle('vertical');
     container.classList.toggle('horizontal');
+
+    enterFullscreen(); // 🔥 加這行
 }
 
 /* 關燈 */
