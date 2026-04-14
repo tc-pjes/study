@@ -3,7 +3,7 @@
 <head>
 <meta charset="UTF-8">
 <meta name="viewport" content="width=device-width, initial-scale=1.0">
-<title>紅綠燈號誌</title>
+<title>紅綠燈</title>
 
 <style>
 body {
@@ -16,59 +16,56 @@ body {
 }
 
 /* 外框 */
-.traffic-light {
-    background: #222;
-    padding: 2vh;
-    border-radius: 2vh;
+.container {
     display: flex;
-    flex-direction: column; /* 預設直式 */
-    gap: 2vh;
-    box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
 
-/* 橫式模式（關鍵！） */
-@media (orientation: landscape) {
-    .traffic-light {
-        flex-direction: row; /* 改為橫排 */
-    }
+/* 預設直式 */
+.container.vertical .traffic-light {
+    flex-direction: column;
+}
+
+/* 橫式 */
+.container.horizontal .traffic-light {
+    flex-direction: row;
+}
+
+/* 紅綠燈 */
+.traffic-light {
+    background: #222;
+    padding: 20px;
+    border-radius: 20px;
+    display: flex;
+    gap: 20px;
+    cursor: pointer; /* 👉 提示可點擊 */
+    box-shadow: 0 0 20px rgba(0,0,0,0.5);
 }
 
 /* 燈 */
 .light {
-    width: 15vw;
-    height: 15vw;
-    max-width: 120px;
-    max-height: 120px;
-    min-width: 70px;
-    min-height: 70px;
+    width: 80px;
+    height: 80px;
     border-radius: 50%;
     background: #444;
     transition: 0.3s;
 }
 
-/* 亮燈效果 */
-.red.active {
-    background: red;
-    box-shadow: 0 0 30px red;
-}
+/* 亮燈 */
+.active.red { background: red; box-shadow: 0 0 20px red; }
+.active.yellow { background: gold; box-shadow: 0 0 20px gold; }
+.active.green { background: limegreen; box-shadow: 0 0 20px limegreen; }
 
-.yellow.active {
-    background: gold;
-    box-shadow: 0 0 30px gold;
-}
-
-.green.active {
-    background: limegreen;
-    box-shadow: 0 0 30px limegreen;
-}
-</style></head>
+</style>
+</head>
 
 <body>
 
-<div class="traffic-light">
-    <div class="light red"></div>
-    <div class="light yellow"></div>
-    <div class="light green"></div>
+<div class="container vertical" id="container">
+    <div class="traffic-light" onclick="toggleLayout()">
+        <div class="light red"></div>
+        <div class="light yellow"></div>
+        <div class="light green"></div>
+    </div>
 </div>
 
 <script>
@@ -78,29 +75,44 @@ let lights = {
     green: document.querySelector('.green')
 };
 
+let container = document.getElementById('container');
+
+/* 點擊切換方向 */
+function toggleLayout() {
+    container.classList.toggle('vertical');
+    container.classList.toggle('horizontal');
+}
+
+/* 關燈 */
 function turnOffAll() {
     for (let key in lights) {
         lights[key].classList.remove('active');
     }
 }
 
+/* 主流程 */
 function startTrafficLight() {
+
     function cycle() {
+
         // 綠燈
         turnOffAll();
         lights.green.classList.add('active');
 
         setTimeout(() => {
+
             // 黃燈
             turnOffAll();
             lights.yellow.classList.add('active');
 
             setTimeout(() => {
+
                 // 紅燈
                 turnOffAll();
                 lights.red.classList.add('active');
 
-                setTimeout(cycle, 3000); // 回到綠燈
+                setTimeout(cycle, 3000);
+
             }, 1500);
 
         }, 4000);
