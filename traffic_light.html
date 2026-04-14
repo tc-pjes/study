@@ -21,9 +21,16 @@ body {
     padding: 2vh;
     border-radius: 2vh;
     display: flex;
-    flex-direction: column;
+    flex-direction: column; /* 預設直式 */
     gap: 2vh;
     box-shadow: 0 0 20px rgba(0,0,0,0.5);
+}
+
+/* 橫式模式（關鍵！） */
+@media (orientation: landscape) {
+    .traffic-light {
+        flex-direction: row; /* 改為橫排 */
+    }
 }
 
 /* 燈 */
@@ -54,8 +61,7 @@ body {
     background: limegreen;
     box-shadow: 0 0 30px limegreen;
 }
-</style>
-</head>
+</style></head>
 
 <body>
 
