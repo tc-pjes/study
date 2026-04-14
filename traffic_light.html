@@ -119,10 +119,10 @@ function toggleFullscreen() {
         document.documentElement.requestFullscreen().catch(err => {
             alert(`無法切換全螢幕: ${err.message}`);
         });
-        document.getElementById('fullscreen-btn').innerText = "][";
+        document.getElementById('fullscreen-btn').innerText = "] [";
     } else {
         document.exitFullscreen();
-        document.getElementById('fullscreen-btn').innerText = "[]";
+        document.getElementById('fullscreen-btn').innerText = "[ ]";
     }
 }
 
